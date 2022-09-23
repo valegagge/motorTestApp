@@ -15,7 +15,9 @@ docker run -it --name motorbrakeappsdev --mount type=bind,source=${HOME}/FIVE_WO
 3. ```apt-get install python3-colorama```
 
 4. - install dependencies:
-   ```cd robotology-superbuild
+   ```
+   apt update
+   cd robotology-superbuild
    chmod +x ./scripts/install_apt_python_dependencies.sh
    ./scripts/install_apt_python_dependencies.sh 
    ```
