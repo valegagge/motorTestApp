@@ -14,9 +14,13 @@ docker run -it --name motorbrakeappsdev --mount type=bind,source=${HOME}/FIVE_WO
 
 3. ```apt-get install python3-colorama```
 
-4. ``` chmod +x script
-       ./scripts/.... ```
+4. - install dependencies:
+   ```cd robotology-superbuild
+   chmod +x ./scripts/install_apt_python_dependencies.sh
+   ./scripts/install_apt_python_dependencies.sh 
+   ```
+    - compile robotology-syperbuild with `ROBOTOLOGY_USES_PYTHON` CMake option `ON`
 
- for compiling robologysuperbuild with python: https://github.com/robotology/robotology-superbuild/blob/master/doc/cmake-options.md#python
+ For more info: [compiling robologysuperbuild with python](https://github.com/robotology/robotology-superbuild/blob/master/doc/cmake-options.md#python)
 
 5. export PYTHONPATH=${PYTHONPATH}:/usr/local/lib/python3/dist-packages/ 
