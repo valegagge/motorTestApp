@@ -12,6 +12,7 @@ import serial
 import logging
 import datetime
 import re
+import yarp
 import matplotlib.pyplot as plt
 from datetime import datetime
 from termcolor import colored
@@ -73,7 +74,9 @@ def data_acquisition():
         f.write(titlelog)
 
     serialPort = open_serial_port(com_port)
-    
+    p = yarp.BufferedPortBottle()
+    p.open("/motorbrake/out")
+
     with open(filelog, 'a') as f:
         for x in range(1, int(sample_number)+1):
             print('Message',x,'of',sample_number, end='\r')
@@ -86,7 +89,14 @@ def data_acquisition():
                     date = datetime.now().strftime("%H:%M:%S.%f")[:-3]
                     sample.append(dsp6001(repr(x), date, dps6001_data[1], dps6001_data[2], data[12], "f"))
                     f.write(sample[x-1].prog + '\t' + sample[x-1].time + '\t' + sample[x-1].speed + '\t' + sample[x-1].torque + '\t' + sample[x-1].rotation + '\t' + sample[x-1].freq + '\n')
-    close_serial_port(serialPort, com_port)            
+    close_serial_port(serialPort, com_port)    
+                    bottle = p.prepare()
+                    bottle.clear()
+                    bottle.addDouble(sample[x-1].speed)
+                    bottle.addDouble(sample[x-1].torque)
+                    bottle.addDouble(sample[x-1].rotation)
+                    bottle.addDouble(sample[x-1].freq)
+                    p.write()        
     print(filelog,'ready')
 
     #plot_data(sample)
@@ -213,5 +223,14 @@ def main():
             send_cmd_magtrol(message_send)
         else:
             send_cmd_magtrol(cmd_menu)
+
+yarp.Network.init()
+
+if not yarp.Network.checkNetwork():
+    print("yarpserver is not running")
+    quit()
+
+
+
 if __name__ == "__main__":
     main()
