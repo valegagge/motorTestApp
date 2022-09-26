@@ -92,8 +92,9 @@ def data_acquisition():
                     date = datetime.now().strftime("%H:%M:%S.%f")[:-3]
                     sample.append(dsp6001(repr(x), date, dps6001_data[1], dps6001_data[2], data[12], "f"))
                     f.write(sample[x-1].prog + '\t' + sample[x-1].time + '\t' + sample[x-1].speed + '\t' + sample[x-1].torque + '\t' + sample[x-1].rotation + '\t' + sample[x-1].freq + '\n')
-                    bt_out = p.prepare()
-                    bt_out.addInt32(10)
+                    bottle = p.prepare()
+                    bottle.clear()
+                    bottle.addInt32(x)
                     p.write()
                     yarp.delay(0.5)
 
