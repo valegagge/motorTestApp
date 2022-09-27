@@ -89,14 +89,15 @@ def data_acquisition():
                     date = datetime.now().strftime("%H:%M:%S.%f")[:-3]
                     sample.append(dsp6001(repr(x), date, dps6001_data[1], dps6001_data[2], data[12], "f"))
                     f.write(sample[x-1].prog + '\t' + sample[x-1].time + '\t' + sample[x-1].speed + '\t' + sample[x-1].torque + '\t' + sample[x-1].rotation + '\t' + sample[x-1].freq + '\n')
-    close_serial_port(serialPort, com_port)    
                     bottle = p.prepare()
                     bottle.clear()
-                    bottle.addDouble(sample[x-1].speed)
-                    bottle.addDouble(sample[x-1].torque)
-                    bottle.addDouble(sample[x-1].rotation)
-                    bottle.addDouble(sample[x-1].freq)
-                    p.write()        
+                    bottle.addFloat32(float(sample[x-1].speed))
+                    bottle.addFloat32(float(sample[x-1].torque))
+                    bottle.addString(sample[x-1].rotation) #R is Clockwise dynamometer shaft rotation (right), while L is Counterclockwise dynamometer shaft rotation (left).
+                    bottle.addString(sample[x-1].freq)
+                    p.write()    
+                    
+    close_serial_port(serialPort, com_port)    
     print(filelog,'ready')
 
     #plot_data(sample)
@@ -141,7 +142,7 @@ def send_cmd_magtrol(com_menu):
 # -------------------------------------------------------------------------
 def open_serial_port(com_port):
     # Set up serial port for read
-    serialPort = serial.Serial(port=com_port, baudrate=19200, bytesize=8, timeout=1, stopbits=serial.STOPBITS_ONE)
+    serialPort = serial.Serial(port=com_port, baudrate=9600, bytesize=8, timeout=1, stopbits=serial.STOPBITS_ONE)
     #print('-------------------------------------------------');
     #print('Starting Serial Port', com_port)
     return serialPort
