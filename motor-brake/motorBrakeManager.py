@@ -1,9 +1,9 @@
 # -------------------------------------------------------------------------
-# IIT - iCub Tech 2022
+# Copyright (C) 2022 iCub Tech - Istituto Italiano di Tecnologia
 # Python script for acquiring data from DSP6001 Dynamometer Controller
 #
-# Written by A. Mura
-# <andrea.mura@iit.it>
+# Written by A. Mura and V. Gaggero
+# <andrea.mura@iit.it> <valentina.gaggero@iit.it>
 # -------------------------------------------------------------------------
 
 import sys, time
