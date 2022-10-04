@@ -12,7 +12,7 @@ import serial
 import logging
 import datetime
 import re
-import yarp
+from motorBrakeDriver import MotorBrake as MotBrDriver
 import matplotlib.pyplot as plt
 from datetime import datetime
 from termcolor import colored
@@ -28,14 +28,7 @@ cmd_menu = 1
 com_port = ''
 # Answer format 'S    0T0.488R\r\n'
 
-class dsp6001:
-    def __init__(self, prog, time, speed, torque, rotation, freq):
-        self.prog = prog
-        self.time = time
-        self.speed = speed
-        self.torque = torque
-        self.rotation = rotation
-        self.freq = freq
+
         
 # -------------------------------------------------------------------------
 # DSP6001 COMMAND SET
@@ -55,7 +48,7 @@ dsp6001_end = "\r\n"
 # Data acquisition
 # -------------------------------------------------------------------------
 def data_acquisition():
-    global com_port
+    
     sample = []
     valid = False
     while not valid: #loop until the user enters a valid int
@@ -73,9 +66,6 @@ def data_acquisition():
     with open(filelog, 'w') as f:
         f.write(titlelog)
 
-    serialPort = open_serial_port(com_port)
-    p = yarp.BufferedPortBottle()
-    p.open("/motorbrake/out")
 
     with open(filelog, 'a') as f:
         for x in range(1, int(sample_number)+1):
@@ -89,15 +79,7 @@ def data_acquisition():
                     date = datetime.now().strftime("%H:%M:%S.%f")[:-3]
                     sample.append(dsp6001(repr(x), date, dps6001_data[1], dps6001_data[2], data[12], "f"))
                     f.write(sample[x-1].prog + '\t' + sample[x-1].time + '\t' + sample[x-1].speed + '\t' + sample[x-1].torque + '\t' + sample[x-1].rotation + '\t' + sample[x-1].freq + '\n')
-                    bottle = p.prepare()
-                    bottle.clear()
-                    bottle.addFloat32(float(sample[x-1].speed))
-                    bottle.addFloat32(float(sample[x-1].torque))
-                    bottle.addString(sample[x-1].rotation) #R is Clockwise dynamometer shaft rotation (right), while L is Counterclockwise dynamometer shaft rotation (left).
-                    bottle.addString(sample[x-1].freq)
-                    p.write()    
-                    
-    close_serial_port(serialPort, com_port)    
+                      
     print(filelog,'ready')
 
     #plot_data(sample)
@@ -125,41 +107,41 @@ def plot_data(var):
     #input("Press [enter] to continue.")
     #plt.show(block=False)  
     
-# -------------------------------------------------------------------------
-# Send command to Magtrol
-# -------------------------------------------------------------------------
-def send_cmd_magtrol(com_menu):
-    global com_port
-    TX_messages = [com_menu+dsp6001_end]
-    serialPort = open_serial_port(com_port)
-    for msg in TX_messages:
-        serialPort.write(msg.encode())
-        print(colored('\nMagtrol says:', 'yellow'), serialPort.readline().decode())
-    close_serial_port(serialPort, com_port) 
+# # -------------------------------------------------------------------------
+# # Send command to Magtrol
+# # -------------------------------------------------------------------------
+# def send_cmd_magtrol(com_menu):
+#     global com_port
+#     TX_messages = [com_menu+dsp6001_end]
+#     serialPort = open_serial_port(com_port)
+#     for msg in TX_messages:
+#         serialPort.write(msg.encode())
+#         print(colored('\nMagtrol says:', 'yellow'), serialPort.readline().decode())
+#     close_serial_port(serialPort, com_port) 
     
-# -------------------------------------------------------------------------
-# Open serial port
-# -------------------------------------------------------------------------
-def open_serial_port(com_port):
-    # Set up serial port for read
-    serialPort = serial.Serial(port=com_port, baudrate=9600, bytesize=8, timeout=1, stopbits=serial.STOPBITS_ONE)
-    #print('-------------------------------------------------');
-    #print('Starting Serial Port', com_port)
-    return serialPort
+# # -------------------------------------------------------------------------
+# # Open serial port
+# # -------------------------------------------------------------------------
+# def open_serial_port(com_port):
+#     # Set up serial port for read
+#     serialPort = serial.Serial(port=com_port, baudrate=9600, bytesize=8, timeout=1, stopbits=serial.STOPBITS_ONE)
+#     #print('-------------------------------------------------');
+#     #print('Starting Serial Port', com_port)
+#     return serialPort
 
-# -------------------------------------------------------------------------
-# Close serial port
-# -------------------------------------------------------------------------
-def close_serial_port(serialPort, com_port):
-    #print('Closing Serial Port',com_port)
-    #print('-------------------------------------------------')
-    serialPort.close()
+# # -------------------------------------------------------------------------
+# # Close serial port
+# # -------------------------------------------------------------------------
+# def close_serial_port(serialPort, com_port):
+#     #print('Closing Serial Port',com_port)
+#     #print('-------------------------------------------------')
+#     serialPort.close()
 
 # -------------------------------------------------------------------------
 # Scan COM ports
 # -------------------------------------------------------------------------
 def scan_com_port():
-    global com_port
+
     global com_menu
     com_list = []
     print('-------------------------------------------------');
@@ -170,6 +152,7 @@ def scan_com_port():
       com_menu+=1
       com_list.append(p.device)
     com_port = input_keyboard(com_list)
+    return com_port
     
 # -------------------------------------------------------------------------
 # Input command
@@ -182,7 +165,7 @@ def input_command():
     for p in dsp6001_cmd:
       print('[',cmd_menu,']: ', p)
       cmd_menu+=1
-    cmd_menu = input_keyboard(dsp6001_cmd)
+    cmd_menu = input_keyboard(dsp6001_cmd) 
     
 # -------------------------------------------------------------------------
 # Keyboard input
@@ -213,24 +196,21 @@ def main():
     global cmd_menu
     print('-------------------------------------------------');
     print(colored('         MAGTROL DSP6001 control script          ', 'white', 'on_green'))
-    scan_com_port()
+    chosen_com_port = scan_com_port()
+    motor_br_dev = MotBrDriver(chosen_com_port, 9600)
+    motor_br_dev.openSerialPort()
     while cmd_menu!='Quit': 
         input_command()
         if cmd_menu == 'OD':
-            data_acquisition()
+            data_acquisition(motor_br_dev)
         elif cmd_menu == 'Custom':
             print(colored('Type the command to send:  ', 'green'), end='\b')
             message_send = input()
-            send_cmd_magtrol(message_send)
+            motor_br_dev.sendCommand(message_send)
         else:
-            send_cmd_magtrol(cmd_menu)
-
-yarp.Network.init()
-
-if not yarp.Network.checkNetwork():
-    print("yarpserver is not running")
-    quit()
-
+            motor_br_dev.sendCommand(cmd_menu)
+    
+    motor_br_dev.closeSerialPort()
 
 
 if __name__ == "__main__":
