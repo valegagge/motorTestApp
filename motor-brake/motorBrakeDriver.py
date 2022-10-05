@@ -52,8 +52,13 @@ class MotorBrakeOuputData:
     def __init__(self) -> None:
         self.torque=0.0
         self.speed=0.0
+        self.rotation="-"
+        self.time = "::"
+        self.progNum=0
     def printData(self):
-        print("torque=", self.torque, " speed= ", self.speed)
+        print(self.time, " torque=", self.torque, " speed= ", self.speed, "rotation=", self.rotation)
+
+
 
 #note: how to manage error??? see here https://stackoverflow.com/questions/45411924/python3-two-way-serial-communication-reading-in-data
 class MotorBrake:
@@ -77,10 +82,27 @@ class MotorBrake:
             # = serial.Serial(self.cfg.comport, self.cfg.baudrate, bytesize=8, timeout=1, stopbits=serial.STOPBITS_ONE)
             #print('-------------------------------------------------');
             #print('Starting Serial Port', com_port)
-    def getData(self):
+    def getDataFake(self):
         self.mydata.torque += 1
         self.mydata.speed +=1
         return self.mydata # check return value or reference
+    def getData(self):
+        cmd_menu="OD"
+        TX_messages = [cmd_menu+dsp6001_end]
+        for msg in TX_messages:
+            self.serialPort.write( msg.encode() )
+        data = self.serialPort.readline().decode()
+        if re.search("^S.+T.+R.+",data):
+            data_split_str = re.split("[S,T,R,L]", ''.join(data))
+            date = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+            self.mydata.speed = float(data_split_str[1])
+            self.mydata.torque = float(data_split_str[2])
+            self.mydata.rotation = data[12]
+            self.mydata.time = date
+            self.progNum +=1
+
+        return self.mydata # check return value or reference
+    
     def closeSerialPort(self):
         #print('Closing Serial Port',com_port)
         #print('-------------------------------------------------')
