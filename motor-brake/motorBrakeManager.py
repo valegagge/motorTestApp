@@ -6,6 +6,7 @@
 # <andrea.mura@iit.it> <valentina.gaggero@iit.it>
 # -------------------------------------------------------------------------
 
+from concurrent.futures import thread
 import serial.tools.list_ports as portlist
 import yarp
 from threading import Thread
@@ -14,6 +15,9 @@ from motorBrakeDriver import MotorBrake as MotBrDriver
 import matplotlib.pyplot as plt
 from termcolor import colored
 from colorama import init
+import sys
+import argparse
+import time
 
 # -------------------------------------------------------------------------
 # General
@@ -37,8 +41,8 @@ MENU_CODE_quit=7
 
 user_menu = {
     MENU_CODE_get_id: {"code":MENU_CODE_get_id, "usrStr":"Get Magtrol Id and revision",    "MagtrolCode": "*IDN?"},
-    MENU_CODE_start_acq: {"code":MENU_CODE_start_acq, "usrStr":"Start data acquisition on file", "MagtrolCode": "OD"},
-    MENU_CODE_stop_acq: {"code":MENU_CODE_stop_acq, "usrStr":"Stop data acquisition on file", "MagtrolCode": ""},
+    MENU_CODE_start_acq: {"code":MENU_CODE_start_acq, "usrStr":"Start data acquisition", "MagtrolCode": "OD"},
+    MENU_CODE_stop_acq: {"code":MENU_CODE_stop_acq, "usrStr":"Stop data acquisition", "MagtrolCode": ""},
     MENU_CODE_set_trq: {"code":MENU_CODE_set_trq, "usrStr":"Send torque setpoint",           "MagtrolCode": "Q"},
     MENU_CODE_set_sp: {"code":MENU_CODE_set_sp, "usrStr":"Send speed setpoint",            "MagtrolCode": "N"},
     MENU_CODE_custom: {"code":MENU_CODE_custom, "usrStr":"Custom",                         "MagtrolCode": ""},
@@ -50,40 +54,53 @@ user_menu = {
 # -------------------------------------------------------------------------
 
 class MotorBrakeDataCollectorThread (Thread):
-    def __init__(self, motor_br_dev, period, logOnFile, stopEvt):
+    def __init__(self, motor_br_dev, stopEvt, period, logFileName, yarpSrvEnable):
         Thread.__init__(self)
         self.motor_br_dev = motor_br_dev
         self.period = period
-        self.logOnFile = logOnFile
         self.stopEvt = stopEvt
-        self.filelog = "MagtrolLog.txt"
-        self.yarpOutPort = yarp.BufferedPortBottle()
-        self.yarpOutPort.open("/motorbrake/out")
+        self.filelog = logFileName
+        self.yarpSrvEnable =yarpSrvEnable
+        if self.yarpSrvEnable ==True:
+            self.yarpOutPort = yarp.BufferedPortBottle()
+            self.yarpOutPort.open("/motorbrake/out")
     def run(self):
         print ("MotorBrakeDataCollectorThread is starting ")
-        with open(self.filelog, 'w') as f:
-            f.write("#\tTime\tSpeed\tTorque\tRotation\n")
+        if self.filelog:
+            with open(self.filelog, 'w') as f:
+                f.write("#\tTime\tSpeed\tTorque\tRotation\n")
         
         while True:
             if self.stopEvt.is_set():
-                self.yarpOutPort.close()
-                f.close()
+                if self.yarpSrvEnable ==True:
+                    self.yarpOutPort.close()
+                if self.filelog:
+                    f.close()
                 print ("MotorBrakeDataCollectorThread is closing...")
                 break;
-            
+            start_time = time.time()
             motor_br_data = self.motor_br_dev.getDataFake()
-            if self.logOnFile:
+            if self.filelog:
                 with open(self.filelog, 'a') as f:
                     f.write(str(motor_br_data.progNum) + '\t' + motor_br_data.time + '\t' + str(motor_br_data.speed) + '\t' + str(motor_br_data.torque) + '\t' + motor_br_data.rotation + '\t' + '\n')
-            bottle = self.yarpOutPort.prepare()
-            bottle.clear()
-            bottle.addFloat32(motor_br_data.speed)
-            bottle.addFloat32(motor_br_data.torque)
-            bottle.addString(motor_br_data.rotation) #R is Clockwise dynamometer shaft rotation (right), while L is Counterclockwise dynamometer shaft rotation (left).
-            self.yarpOutPort.write()    
+            if self.yarpSrvEnable ==True:
+                bottle = self.yarpOutPort.prepare()
+                bottle.clear()
+                bottle.addFloat32(motor_br_data.speed)
+                bottle.addFloat32(motor_br_data.torque)
+                bottle.addString(motor_br_data.rotation) #R is Clockwise dynamometer shaft rotation (right), while L is Counterclockwise dynamometer shaft rotation (left).
+                self.yarpOutPort.write()
+            thExeDuration = time.time() - start_time
+            print("MotorBrakeDataCollectorThread: exetime=", thExeDuration, "sleep for", self.period-thExeDuration)
+            time.sleep(self.period-thExeDuration) #go to sleep for remaing time
+
+            #ATTENTION:
+            #note about sleep function
+            #Changed in version 3.5: The function now sleeps at least secs even if the sleep is interrupted by a signal,
+            #except if the signal handler raises an exception (see PEP 475 for the rationale).
+            #from: https://docs.python.org/3/library/time.html#time.sleep
                  
-            #motor_br_data.printData()#print on screen
-    #TODO: add a sleep to make this thread perioding. attention, take in account the time used by the w/r on serial port.   
+    
     #TODO: add alive message      
     def setLogFileName(self, fileName):
         self.filelog = fileName
@@ -174,27 +191,60 @@ def inputComPort(list):
                 print('Please only input number in the brackets')
         except ValueError:
             print('Please only input digits')
+# -------------------------------------------------------------------------
+# parseInputArgument
+# -------------------------------------------------------------------------
+
+
+def parseInputArgument(argv):
+    
+
+    parser = argparse.ArgumentParser(description="Motor brake manager bla bla",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-y", "--yarpServiceOn", action="store_true", help="enable yarp service")
+    parser.add_argument("-u", "--noPrompt", action="store_true", help="starting without menu for user interaction")
+    parser.add_argument("-f", "--file", default="", help="name of file where log data")
+    parser.add_argument("-p", "--period", default=0.1, type=int,help="acquisition data period(seconds)")
+    parser.add_argument("-s", "--serialPort", default='/dev/ttyUSB0', help="Serial port")
+    args = parser.parse_args()
+    config = vars(args)
+    print(config)
+
+    return args
+
+
+
+
 
 # -------------------------------------------------------------------------
 # main
 # -------------------------------------------------------------------------
 def main():
     init()
-    yarp.Network.init()
 
-    if not yarp.Network.checkNetwork():
-        print("yarpserver is not running")
-        quit()
-    cmd_menu = MENU_CODE_NOT_VALID
-    print('-------------------------------------------------');
+    print('-------------------------------------------------')
     print(colored('         MAGTROL DSP6001 control script          ', 'white', 'on_green'))
+
+    args = parseInputArgument(sys.argv)
+
+    if args.yarpServiceOn:
+        yarp.Network.init()
+
+        if not yarp.Network.checkNetwork():
+            print("yarpserver is not running")
+            quit()
+    
+
+
+    cmd_menu = MENU_CODE_NOT_VALID
+   
     chosen_com_port = scanComPort()
     if chosen_com_port == 0:
         return
     motor_br_dev = MotBrDriver(chosen_com_port, 9600)
     motor_br_dev.openSerialPort()
     stopDataCollectorEvt = Event()
-    dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, 0,True,stopDataCollectorEvt)
+    dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopDataCollectorEvt, args.period, args.file, args.yarpServiceOn)
     #tips: use match/case instead of if/elif
     while True:
         cmd_menu = input_command()
