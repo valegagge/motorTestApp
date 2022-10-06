@@ -54,13 +54,14 @@ user_menu = {
 # -------------------------------------------------------------------------
 
 class MotorBrakeDataCollectorThread (Thread):
-    def __init__(self, motor_br_dev, stopEvt, period, logFileName, yarpSrvEnable):
+    def __init__(self, motor_br_dev, stopEvt, lock, period, logFileName, yarpSrvEnable):
         Thread.__init__(self)
         self.motor_br_dev = motor_br_dev
         self.period = period
         self.stopEvt = stopEvt
         self.filelog = logFileName
         self.yarpSrvEnable =yarpSrvEnable
+        self.lock = lock
         if self.yarpSrvEnable ==True:
             self.yarpOutPort = yarp.BufferedPortBottle()
             self.yarpOutPort.open("/motorbrake/out")
@@ -79,7 +80,9 @@ class MotorBrakeDataCollectorThread (Thread):
                 print ("MotorBrakeDataCollectorThread is closing...")
                 break;
             start_time = time.time()
-            motor_br_data = self.motor_br_dev.getDataFake()
+            with self.lock:
+                motor_br_data = self.motor_br_dev.getData()
+
             if self.filelog:
                 with open(self.filelog, 'a') as f:
                     f.write(str(motor_br_data.progNum) + '\t' + motor_br_data.time + '\t' + str(motor_br_data.speed) + '\t' + str(motor_br_data.torque) + '\t' + motor_br_data.rotation + '\t' + '\n')
@@ -91,7 +94,7 @@ class MotorBrakeDataCollectorThread (Thread):
                 bottle.addString(motor_br_data.rotation) #R is Clockwise dynamometer shaft rotation (right), while L is Counterclockwise dynamometer shaft rotation (left).
                 self.yarpOutPort.write()
             thExeDuration = time.time() - start_time
-            print("MotorBrakeDataCollectorThread: exetime=", thExeDuration, "sleep for", self.period-thExeDuration)
+            #print("MotorBrakeDataCollectorThread: exetime=", thExeDuration, "sleep for", self.period-thExeDuration)
             time.sleep(self.period-thExeDuration) #go to sleep for remaing time
 
             #ATTENTION:
@@ -244,7 +247,8 @@ def main():
     motor_br_dev = MotBrDriver(chosen_com_port, 9600)
     motor_br_dev.openSerialPort()
     stopDataCollectorEvt = Event()
-    dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopDataCollectorEvt, args.period, args.file, args.yarpServiceOn)
+    lock = Thread.Lock()
+    dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopDataCollectorEvt, lock, args.period, args.file, args.yarpServiceOn)
     #tips: use match/case instead of if/elif
     while True:
         cmd_menu = input_command()
@@ -265,7 +269,8 @@ def main():
         elif cmd_menu == MENU_CODE_custom:
             print(colored('Type the command to send:  ', 'green'), end='\b')
             message_send = input()
-            motor_br_dev.sendCommand(message_send)
+            with lock:
+                motor_br_dev.sendCommand(message_send)
         elif MENU_CODE_quit:
             if dataCollectorTh.is_alive():
                 stopDataCollectorEvt.set()
