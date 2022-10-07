@@ -99,7 +99,7 @@ class MotorBrake:
             self.mydata.torque = float(data_split_str[2])
             self.mydata.rotation = data[12]
             self.mydata.time = date
-            self.progNum +=1
+            self.mydata.progNum +=1
 
         return self.mydata # check return value or reference
     
