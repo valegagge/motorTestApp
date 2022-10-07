@@ -195,6 +195,15 @@ def inputComPort(list):
                 print('Please only input number in the brackets')
         except ValueError:
             print('Please only input digits')
+
+def inputFloatValue():
+    while True: #loop until the user enters a valid int
+        try:
+            val = float(input())
+            return val
+        except ValueError:
+            print('Please only float values')
+            return 0
 # -------------------------------------------------------------------------
 # parseInputArgument
 # -------------------------------------------------------------------------
@@ -264,9 +273,15 @@ def main():
                 stopDataCollectorEvt.set()
                 dataCollectorTh.join()
         elif cmd_menu == MENU_CODE_set_trq:
-            print ("sending torque setpoint FAKE :P")
+            print(colored('Type the torque value to send:  ', 'green'), end='\b')
+            torque = inputFloatValue()
+            with lock:
+                motor_br_dev.sendTorqueSetpoint(torque)
         elif cmd_menu == MENU_CODE_set_sp:
-            print ("sending torque vale FAKE :P")
+            print(colored('Type the speed value to send:  ', 'green'), end='\b')
+            speed = inputFloatValue()
+            with lock:
+                motor_br_dev.sendTorqueSetpoint(speed)
         elif cmd_menu == MENU_CODE_custom:
             print(colored('Type the command to send:  ', 'green'), end='\b')
             message_send = input()
