@@ -26,3 +26,9 @@ docker run -it --name motorbrakeappsdev --mount type=bind,source=${HOME}/FIVE_WO
  For more info: [compiling robologysuperbuild with python](https://github.com/robotology/robotology-superbuild/blob/master/doc/cmake-options.md#python)
 
 5. export PYTHONPATH=${PYTHONPATH}:/usr/local/lib/python3/dist-packages/ 
+
+# to develop test app
+In first attempt I decided to use the RTF, because for me is quiker get a working application
+```
+docker run -it --name motorbraketest --mount type=bind,source=${HOME}/FIVE_WORKSPACE/,target=/root/FIVE_WORKSPACE --mount type=bind,source=${HOME}/.config/yarp,target=/root/.config/yarp --env DISPLAY=${DISPLAY} --env XAUTHORITY=/root/.Xauthority --mount type=bind,source=${XAUTHORITY},target=/root/.Xauthority --mount type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix icubteamcode/superbuild-icubtest:master-stable_sources bash
+```
