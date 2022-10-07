@@ -281,7 +281,7 @@ def main():
             print(colored('Type the speed value to send:  ', 'green'), end='\b')
             speed = inputFloatValue()
             with lock:
-                motor_br_dev.sendTorqueSetpoint(speed)
+                motor_br_dev.sendSpeedSetpoint(speed)
         elif cmd_menu == MENU_CODE_custom:
             print(colored('Type the command to send:  ', 'green'), end='\b')
             message_send = input()
