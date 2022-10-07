@@ -11,6 +11,7 @@ import serial.tools.list_ports as portlist
 import yarp
 from threading import Thread
 from threading import Event
+from threading import Lock
 from motorBrakeDriver import MotorBrake as MotBrDriver
 import matplotlib.pyplot as plt
 from termcolor import colored
@@ -247,7 +248,7 @@ def main():
     motor_br_dev = MotBrDriver(chosen_com_port, 9600)
     motor_br_dev.openSerialPort()
     stopDataCollectorEvt = Event()
-    lock = Thread.Lock()
+    lock = Lock()
     dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopDataCollectorEvt, lock, args.period, args.file, args.yarpServiceOn)
     #tips: use match/case instead of if/elif
     while True:
