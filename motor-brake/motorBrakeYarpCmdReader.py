@@ -33,14 +33,15 @@ class DataProcessor(yarp.PortReader):
             print("MotorBrakeYarpCmdReader: connection not valid...closing")
             return False
         bin = yarp.Bottle()
-        bout = yarp.Bottle()
+        #bout = yarp.Bottle()
         print("Trying to read from connection")
         ok = bin.read(connection)
         if not(ok):
             print("MotorBrakeYarpCmdReader: failed to read input")
             return False
         self.__parseCommand(bin.toString())
-        #print("Received [%s]"%bin.toString())
+        print("Received [%s]"%bin.toString())
+        return True
         #removed rensponce
         # bout.addString("Received:")
         # bout.append(bin)
@@ -78,17 +79,11 @@ class DataProcessor(yarp.PortReader):
 
 
 class MotorBrakeYarpCmdReader (Thread):
-    def __init__(self, motor_br_dev, stopEvt, lock, period, logFileName, yarpSrvEnable):
+    def __init__(self, motor_br_dev, stopEvt, lock):
         Thread.__init__(self)
-        self.motor_br_dev = motor_br_dev
-        self.period = period
         self.stopEvt = stopEvt
-        self.filelog = logFileName
-        self.yarpSrvEnable =yarpSrvEnable
         self.lock = lock
         self.yarpInputPort =yarp.Port()
-        #self.yarpInputPort.open("/motorbrake/cmd:i")
-        #self.yarpInputPort.setTimeout(1.0)
         self.dataProc = DataProcessor(motor_br_dev,lock)
         self.yarpInputPort.setReader(self.dataProc)
         self.yarpInputPort.open("/motorbrake/cmd:i")
@@ -97,13 +92,13 @@ class MotorBrakeYarpCmdReader (Thread):
         print ("MotorBrakeYarpCmdReader is starting ")
         
         while True:
-            if self.stopEvt.is_set():
-                print ("MotorBrakeYarpCmdReader is closing...")
-                self.yarpInputPort.close()
-                break;
+            print ("MotorBrakeYarpCmdReader is about to waiting... ")
+            self.stopEvt.wait()
+            print ("MotorBrakeYarpCmdReader is closing...")
+            self.yarpInputPort.close()
+            break;
             
-            print ("MotorBrakeYarpCmdReader i'm reading...")
-            time.sleep(3)
+            
             # bottle = yarp.Bottle()
             # self.yarpInputPort.read(bottle)
             # print("I read", bottle.toString())

@@ -257,10 +257,10 @@ def main():
         return
     motor_br_dev = MotBrDriver(chosen_com_port, 9600)
     motor_br_dev.openSerialPort()
-    stopDataCollectorEvt = Event()
+    stopThreadsEvt = Event()
     lock = Lock()
-    dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopDataCollectorEvt, lock, args.period, args.file, args.yarpServiceOn)
-    yCmdReaderTh = yCmdReader(motor_br_dev, stopDataCollectorEvt, lock, args.period, args.file, args.yarpServiceOn)
+    dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopThreadsEvt, lock, args.period, args.file, args.yarpServiceOn)
+    yCmdReaderTh = yCmdReader(motor_br_dev, stopThreadsEvt, lock)
     if args.yarpServiceOn == True:
         yCmdReaderTh.start()
     
@@ -277,7 +277,7 @@ def main():
             dataCollectorTh.start()
         elif cmd_menu == MENU_CODE_stop_acq:
             if dataCollectorTh.is_alive():
-                stopDataCollectorEvt.set()
+                stopThreadsEvt.set()
                 dataCollectorTh.join()
         elif cmd_menu == MENU_CODE_set_trq:
             print(colored('Type the torque value to send:  ', 'green'), end='\b')
@@ -295,13 +295,18 @@ def main():
             with lock:
                 motor_br_dev.sendCommand(message_send)
         elif MENU_CODE_quit:
+            print ("Recived quit command")
             if dataCollectorTh.is_alive() or yCmdReaderTh.is_alive():
-                stopDataCollectorEvt.set()
+                stopThreadsEvt.set()
             if dataCollectorTh.is_alive():
+                print("Waiting for data collector...")
                 dataCollectorTh.join()
             if yCmdReaderTh.is_alive():
+                print("Waiting for yCmdReader...")
                 yCmdReaderTh.join()
+            print("closing serial port")
             motor_br_dev.closeSerialPort()
+            print("closing yarp network")
             yarp.Network.fini()
             break;
     
