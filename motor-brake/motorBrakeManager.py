@@ -19,6 +19,7 @@ from colorama import init
 import sys
 import argparse
 import time
+from motorBrakeYarpCmdReader import MotorBrakeYarpCmdReader as yCmdReader
 
 # -------------------------------------------------------------------------
 # General
@@ -259,6 +260,12 @@ def main():
     stopDataCollectorEvt = Event()
     lock = Lock()
     dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopDataCollectorEvt, lock, args.period, args.file, args.yarpServiceOn)
+    yCmdReaderTh = yCmdReader(motor_br_dev, stopDataCollectorEvt, lock, args.period, args.file, args.yarpServiceOn)
+    if args.yarpServiceOn == True:
+        yCmdReaderTh.start()
+    
+    print(colored('yarp reader started!!!  ', 'green'), end='\b')
+
     #tips: use match/case instead of if/elif
     while True:
         cmd_menu = input_command()
@@ -288,10 +295,14 @@ def main():
             with lock:
                 motor_br_dev.sendCommand(message_send)
         elif MENU_CODE_quit:
-            if dataCollectorTh.is_alive():
+            if dataCollectorTh.is_alive() or yCmdReaderTh.is_alive():
                 stopDataCollectorEvt.set()
+            if dataCollectorTh.is_alive():
                 dataCollectorTh.join()
+            if yCmdReaderTh.is_alive():
+                yCmdReaderTh.join()
             motor_br_dev.closeSerialPort()
+            yarp.Network.fini()
             break;
     
 
