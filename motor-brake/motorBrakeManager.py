@@ -64,11 +64,11 @@ class MotorBrakeDataCollectorThread (Thread):
         self.filelog = logFileName
         self.yarpSrvEnable =yarpSrvEnable
         self.lock = lock
-        if self.yarpSrvEnable ==True:
+        if self.yarpSrvEnable == True:
             self.yarpOutPort = yarp.BufferedPortBottle()
             self.yarpOutPort.open("/motorbrake/out")
     def run(self):
-        print ("MotorBrakeDataCollectorThread is starting ")
+        print ("MotorBrakeDataCollector is starting ")
         if self.filelog:
             with open(self.filelog, 'w') as f:
                 f.write("#\tTime\tSpeed\tTorque\tRotation\n")
@@ -79,7 +79,7 @@ class MotorBrakeDataCollectorThread (Thread):
                     self.yarpOutPort.close()
                 if self.filelog:
                     f.close()
-                print ("MotorBrakeDataCollectorThread is closing...")
+                print ("MotorBrakeDataCollector is closing...")
                 break;
             start_time = time.time()
             with self.lock:
@@ -216,7 +216,7 @@ def parseInputArgument(argv):
     parser = argparse.ArgumentParser(description="Motor brake manager bla bla",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-y", "--yarpServiceOn", action="store_true", help="enable yarp service")
-    parser.add_argument("-u", "--noPrompt", action="store_true", help="starting without menu for user interaction")
+    #parser.add_argument("-u", "--noPrompt", action="store_true", help="starting without menu for user interaction")
     parser.add_argument("-f", "--file", default="", help="name of file where log data")
     parser.add_argument("-p", "--period", default=0.1, type=float,help="acquisition data period(seconds)")
     parser.add_argument("-s", "--serialPort", default='/dev/ttyUSB0', help="Serial port")
@@ -255,19 +255,21 @@ def main():
     chosen_com_port = scanComPort()
     if chosen_com_port == 0:
         return
+
     motor_br_dev = MotBrDriver(chosen_com_port, 9600)
+
     motor_br_dev.openSerialPort()
+
     stopThreadsEvt = Event()
     lock = Lock()
     dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopThreadsEvt, lock, args.period, args.file, args.yarpServiceOn)
     yCmdReaderTh = yCmdReader(motor_br_dev, stopThreadsEvt, lock)
     if args.yarpServiceOn == True:
         yCmdReaderTh.start()
-    
-    print(colored('yarp reader started!!!  ', 'green'), end='\b')
 
     #tips: use match/case instead of if/elif
     while True:
+        
         cmd_menu = input_command()
 
         if cmd_menu == MENU_CODE_start_acq:

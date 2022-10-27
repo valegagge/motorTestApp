@@ -21,6 +21,7 @@ import argparse
 import time
 
 
+
 class DataProcessor(yarp.PortReader):
     def __init__(self, motor_br_dev, lock):
         super().__init__()
@@ -83,16 +84,14 @@ class MotorBrakeYarpCmdReader (Thread):
         Thread.__init__(self)
         self.stopEvt = stopEvt
         self.lock = lock
-        self.yarpInputPort =yarp.Port()
+        self.yarpInputPort = yarp.Port()
         self.dataProc = DataProcessor(motor_br_dev,lock)
         self.yarpInputPort.setReader(self.dataProc)
-        self.yarpInputPort.open("/motorbrake/cmd:i")
         
     def run(self):
         print ("MotorBrakeYarpCmdReader is starting ")
-        
+        self.yarpInputPort.open("/motorbrake/cmd:i")
         while True:
-            print ("MotorBrakeYarpCmdReader is about to waiting... ")
             self.stopEvt.wait()
             print ("MotorBrakeYarpCmdReader is closing...")
             self.yarpInputPort.close()
