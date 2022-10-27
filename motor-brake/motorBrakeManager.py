@@ -19,6 +19,7 @@ from colorama import init
 import sys
 import argparse
 import time
+from motorBrakeYarpCmdReader import MotorBrakeYarpCmdReader as yCmdReader
 
 # -------------------------------------------------------------------------
 # General
@@ -217,7 +218,7 @@ def parseInputArgument(argv):
     parser.add_argument("-y", "--yarpServiceOn", action="store_true", help="enable yarp service")
     parser.add_argument("-u", "--noPrompt", action="store_true", help="starting without menu for user interaction")
     parser.add_argument("-f", "--file", default="", help="name of file where log data")
-    parser.add_argument("-p", "--period", default=0.1, type=int,help="acquisition data period(seconds)")
+    parser.add_argument("-p", "--period", default=0.1, type=float,help="acquisition data period(seconds)")
     parser.add_argument("-s", "--serialPort", default='/dev/ttyUSB0', help="Serial port")
     args = parser.parse_args()
     config = vars(args)
@@ -237,7 +238,7 @@ def main():
 
     print('-------------------------------------------------')
     print(colored('         MAGTROL DSP6001 control script          ', 'white', 'on_green'))
-
+    print('-------------------------------------------------')
     args = parseInputArgument(sys.argv)
 
     if args.yarpServiceOn:
@@ -256,9 +257,15 @@ def main():
         return
     motor_br_dev = MotBrDriver(chosen_com_port, 9600)
     motor_br_dev.openSerialPort()
-    stopDataCollectorEvt = Event()
+    stopThreadsEvt = Event()
     lock = Lock()
-    dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopDataCollectorEvt, lock, args.period, args.file, args.yarpServiceOn)
+    dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopThreadsEvt, lock, args.period, args.file, args.yarpServiceOn)
+    yCmdReaderTh = yCmdReader(motor_br_dev, stopThreadsEvt, lock)
+    if args.yarpServiceOn == True:
+        yCmdReaderTh.start()
+    
+    print(colored('yarp reader started!!!  ', 'green'), end='\b')
+
     #tips: use match/case instead of if/elif
     while True:
         cmd_menu = input_command()
@@ -270,7 +277,7 @@ def main():
             dataCollectorTh.start()
         elif cmd_menu == MENU_CODE_stop_acq:
             if dataCollectorTh.is_alive():
-                stopDataCollectorEvt.set()
+                stopThreadsEvt.set()
                 dataCollectorTh.join()
         elif cmd_menu == MENU_CODE_set_trq:
             print(colored('Type the torque value to send:  ', 'green'), end='\b')
@@ -288,10 +295,19 @@ def main():
             with lock:
                 motor_br_dev.sendCommand(message_send)
         elif MENU_CODE_quit:
+            print ("Recived quit command")
+            if dataCollectorTh.is_alive() or yCmdReaderTh.is_alive():
+                stopThreadsEvt.set()
             if dataCollectorTh.is_alive():
-                stopDataCollectorEvt.set()
+                print("Waiting for data collector...")
                 dataCollectorTh.join()
+            if yCmdReaderTh.is_alive():
+                print("Waiting for yCmdReader...")
+                yCmdReaderTh.join()
+            print("closing serial port")
             motor_br_dev.closeSerialPort()
+            print("closing yarp network")
+            yarp.Network.fini()
             break;
     
 
