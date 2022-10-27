@@ -218,7 +218,7 @@ def parseInputArgument(argv):
     parser.add_argument("-y", "--yarpServiceOn", action="store_true", help="enable yarp service")
     parser.add_argument("-u", "--noPrompt", action="store_true", help="starting without menu for user interaction")
     parser.add_argument("-f", "--file", default="", help="name of file where log data")
-    parser.add_argument("-p", "--period", default=0.1, type=int,help="acquisition data period(seconds)")
+    parser.add_argument("-p", "--period", default=0.1, type=float,help="acquisition data period(seconds)")
     parser.add_argument("-s", "--serialPort", default='/dev/ttyUSB0', help="Serial port")
     args = parser.parse_args()
     config = vars(args)
@@ -238,7 +238,7 @@ def main():
 
     print('-------------------------------------------------')
     print(colored('         MAGTROL DSP6001 control script          ', 'white', 'on_green'))
-
+    print('-------------------------------------------------')
     args = parseInputArgument(sys.argv)
 
     if args.yarpServiceOn:
