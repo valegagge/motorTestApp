@@ -25,12 +25,20 @@ from motorBrakeYarpCmdReader import MotorBrakeYarpCmdReader as yCmdReader
 # General
 # -------------------------------------------------------------------------
 
-# Answer format 'S    0T0.488R\r\n'
+# This is the entry point of the Motor Brake Manager.
+# There is the definition of the main and all function used for the 
+# interaction with the user by the prompt menu. Moreover the class
+# MotorBrakeDataCollectorThread id defined. As its name says, 
+# it is a thread that collect the data from the motor-brake device and
+# it dumps them on file and/or publish them on yarp port "/motorbrake/out"
+# depending by its configuration.
+# The interaction with the hardware device is performed by the driver developed 
+# in MotorBrakeDriver.py for the DSP6001 Dynamometer Controller
 
 
 
 # -------------------------------------------------------------------------
-# DSP6001 COMMAND SET
+# Prompt menu definition
 # -------------------------------------------------------------------------
 MENU_CODE_NOT_VALID=-1
 MENU_CODE_get_id=1
@@ -42,13 +50,13 @@ MENU_CODE_custom=6
 MENU_CODE_quit=7
 
 user_menu = {
-    MENU_CODE_get_id: {"code":MENU_CODE_get_id, "usrStr":"Get Magtrol Id and revision",    "MagtrolCode": "*IDN?"},
-    MENU_CODE_start_acq: {"code":MENU_CODE_start_acq, "usrStr":"Start data acquisition", "MagtrolCode": "OD"},
-    MENU_CODE_stop_acq: {"code":MENU_CODE_stop_acq, "usrStr":"Stop data acquisition", "MagtrolCode": ""},
-    MENU_CODE_set_trq: {"code":MENU_CODE_set_trq, "usrStr":"Send torque setpoint",           "MagtrolCode": "Q"},
-    MENU_CODE_set_sp: {"code":MENU_CODE_set_sp, "usrStr":"Send speed setpoint",            "MagtrolCode": "N"},
-    MENU_CODE_custom: {"code":MENU_CODE_custom, "usrStr":"Custom",                         "MagtrolCode": ""},
-    MENU_CODE_quit: {"code":MENU_CODE_quit, "usrStr":"Quit",                           "MagtrolCode": ""},
+    MENU_CODE_get_id: {"code":MENU_CODE_get_id, "usrStr":"Get motor-brake device Id and revision"},
+    MENU_CODE_start_acq: {"code":MENU_CODE_start_acq, "usrStr":"Start data acquisition"},
+    MENU_CODE_stop_acq: {"code":MENU_CODE_stop_acq, "usrStr":"Stop data acquisition"},
+    MENU_CODE_set_trq: {"code":MENU_CODE_set_trq, "usrStr":"Send torque setpoint"},
+    MENU_CODE_set_sp: {"code":MENU_CODE_set_sp, "usrStr":"Send speed setpoint"},
+    MENU_CODE_custom: {"code":MENU_CODE_custom, "usrStr":"Custom"},
+    MENU_CODE_quit: {"code":MENU_CODE_quit, "usrStr":"Quit"},
 }
 
 # -------------------------------------------------------------------------
@@ -237,7 +245,7 @@ def main():
     init()
 
     print('-------------------------------------------------')
-    print(colored('         MAGTROL DSP6001 control script          ', 'white', 'on_green'))
+    print(colored('         Motor Brake Manager          ', 'white', 'on_green'))
     print('-------------------------------------------------')
     args = parseInputArgument(sys.argv)
 

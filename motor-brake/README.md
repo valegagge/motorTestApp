@@ -4,7 +4,7 @@ Motor Brake Manager is an utility for interacting with a motor brake device by c
 
 The main functionalities of the Motor Brake Manager are:
  - read the motor brake data, like torque and speed and dumps them on file and/or publishes them on a yarp port
- - send torue and speed setpoint to the motor brake device
+ - send torque and speed setpoint to the motor brake device
  - send a custom command to the motor brake device
 
 In the next sections you can find instruction on how to interact with the device using the command line and yarp ports.
@@ -18,33 +18,47 @@ If you run the Motor Brake Manager with `--help` option you get all available op
  - `-p PERIOD, --period PERIOD acquisition data period(seconds) (default: 0.1)`
  - `-s SERIALPORT, --serialPort SERIALPORT Serial port (default: /dev/ttyUSB0) **current not available**
 
-If you are interested in publishing the motor brake data on port yarp and/or in commanding the device by a yarp port you need to use the option `yarpServiceOn`. See the section __yarp service__ for more detail.
+If you are interested in publishing the motor brake data on port yarp and/or in commanding the device by a yarp port, you need to use the option `yarpServiceOn`. See the section __yarp service__ for more detail.
 
 
 ## Command menu
 The command available in the promt are:
  - `[1] : Get Magtrol Id and revision` : get the ID end revision 
- - `[2] : Start data acquisition` : start the data acquision in background. When this option is chosen, the utility ask the name of file where save the data retrived; if is not provided the data are not saved on file.
- - `[3] : Stop data acquisition`: start the data acquision
- - `[4] : Send torque setpoint`: sends a torque setpoint. When this option is chosen, the utility ask the value to the user. the value is in nNM.
- - `[5] : Send speed setpoint`: sends a torque setpoint. When this option is chosen, the utility ask the value to the user. the value is in rpm.
+ - `[2] : Start data acquisition` : start the data acquision in background. When this option is chosen, the utility ask the name of file where save the retrived data; if it isn't  provided the data are not saved on file.
+ - `[3] : Stop data acquisition`: stop the data acquision
+ - `[4] : Send torque setpoint`: sends a torque setpoint. When this option is chosen, the utility ask the value to the user. The value is in nNM.
+ - `[5] : Send speed setpoint`: sends a speed setpoint. When this option is chosen, the utility ask the value to the user. The value is in rpm.
  - `[6] : Custom`: send a custom comamnd
  - `[7] : Quit` : exit from the application closing all yarp services also, if they have been anabled.
 
 ## 1. Yarp service
-If the MotorBrakeManager is launched with the option `--yarpServiceOn`, it opens the port `/motorbrake/cmd:i` for receiveing command to send to the device and publish on port `/motorbrake/out` the data read by the device.
+If the MotorBrakeManager is launched with the option `--yarpServiceOn`, it opens the port `/motorbrake/cmd:i` for receiveing command to forward to the device and publish on port `/motorbrake/out` the data read by the device.
 
 ### 1.2 How to send command to the motor brake by yarp port
-You need to send the following commands to the port 'bla bla':
- - `torque <torque_value>`: send the torque setpoint (also with decimal digit ) expressed in nNm ????
+You need to send the following commands to the port `/motorbrake/cmd:i`:
+ - `torque <torque_value>`: send the torque setpoint (also with decimal digit ) expressed in nNm
  - `speed <speed_value>` :  send the speed setpoint (also with decimal digit ) expressed in rpm
 Other commands are ignored.
 
 ### 1.3 Motor brake data published on yarp port
-When the user enables the data acquisition option, the MotorBrakeManager starts a thread with the period specifed by the user by `--period` option (otherwise 0.1 second is used) that collects speed and torque values from the device.
+When the user enables the data acquisition option, the MotorBrakeManager starts a thread with the period specified by the user by `--period` option (otherwise 0.1 second is used); such thread collects speed and torque values from the device and publish them on yarp port `/motorbrake/out`.
 
 
+## implementation
 
+The Motor brake manager is a multi threading application not hardware dependent. 
+This application now works with the device Magtrol DSP6001, but if you want to use with a different device it is sufficient to implement a new driver with the same interface of the deployed in the file motorBrakeDriver.py.
+
+Here is reported the class diagram.
+![immagine](../../../Pictures/MotorBrake_class.jpg)
+
+If you go through the code you can find more information about each class.
+
+Check the units of torque and speed and if are the same in yarp, else it's better add a conversion.
+
+# How to install
+
+# How to run
 
 
 ---------------------------------

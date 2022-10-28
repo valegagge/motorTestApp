@@ -1,20 +1,20 @@
 # -------------------------------------------------------------------------
 # Copyright (C) 2022 iCub Tech - Istituto Italiano di Tecnologia
-# This module is the driver for interacting with motor brake.
+# This module is the driver for interacting with motor brake DSP6001 device.
 #
 # Valentina Gaggero
 # <valentina.gaggero@iit.it>
 # -------------------------------------------------------------------------
 
-import sys, time
-from numpy import False_
-import serial.tools.list_ports as portlist
+#import sys, time
+#from numpy import False_
+#import serial.tools.list_ports as portlist
 import serial
-import logging
+#import logging
 import datetime
 import re
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from datetime import datetime
 from termcolor import colored
 from colorama import init
@@ -62,7 +62,7 @@ class MotorBrakeOuputData:
 
 #note: how to manage error??? see here https://stackoverflow.com/questions/45411924/python3-two-way-serial-communication-reading-in-data
 class MotorBrake:
-    "put here the class documentation"
+    "This is the documentation for class MotorBrake"
 
     def __init__(self, comport, baudrate):
         self.cfg=MotorBrakeCfg(comport, baudrate) #is it usefull??

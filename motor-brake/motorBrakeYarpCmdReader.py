@@ -1,6 +1,9 @@
 # -------------------------------------------------------------------------
 # Copyright (C) 2022 iCub Tech - Istituto Italiano di Tecnologia
-# Python script for acquiring data from DSP6001 Dynamometer Controller
+#
+# Here is defined the MotorBrakeYarpCmdReader class and its help classes,
+# that takes care to receive a command from the input yarp port and forwards
+# it to the motor-brake device.
 #
 # Written by V. Gaggero
 # <valentina.gaggero@iit.it>
@@ -20,7 +23,14 @@ import sys
 import argparse
 import time
 
-
+#-------------------------------------------------------------------------------
+# Here two classes are defined:
+#  - MotorBrakeYarpCmdReader: it is a thread started from the main procces
+#    that create the DataProcessor object and manage the stop event
+#  - DataProcessor: it has the goal of listening to the port /motorbrake/cmd:i
+#    and proccess any received command: if the command has been parsed succesfully 
+#    it forwards the command to the motor-brake's driver. 
+#-------------------------------------------------------------------------------
 
 class DataProcessor(yarp.PortReader):
     def __init__(self, motor_br_dev, lock):
@@ -29,12 +39,10 @@ class DataProcessor(yarp.PortReader):
         self.motor_br_dev = motor_br_dev
     
     def read(self,connection):
-        #print("in DataProcessor.read")
         if not(connection.isValid()):
             print("MotorBrakeYarpCmdReader: connection not valid...closing")
             return False
         bin = yarp.Bottle()
-        #bout = yarp.Bottle()
         print("Trying to read from connection")
         ok = bin.read(connection)
         if not(ok):
