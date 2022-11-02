@@ -6,15 +6,11 @@
 # <valentina.gaggero@iit.it>
 # -------------------------------------------------------------------------
 
-#import sys, time
-#from numpy import False_
-#import serial.tools.list_ports as portlist
+
 import serial
-#import logging
 import datetime
 import re
 
-#import matplotlib.pyplot as plt
 from datetime import datetime
 from termcolor import colored
 from colorama import init

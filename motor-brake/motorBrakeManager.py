@@ -26,7 +26,7 @@ from motorBrakeYarpCmdReader import MotorBrakeYarpCmdReader as yCmdReader
 # -------------------------------------------------------------------------
 
 # This is the entry point of the Motor Brake Manager.
-# There is the definition of the main and all function used for the 
+# There is the definition of the main and all functions used for the 
 # interaction with the user by the prompt menu. Moreover the class
 # MotorBrakeDataCollectorThread id defined. As its name says, 
 # it is a thread that collect the data from the motor-brake device and

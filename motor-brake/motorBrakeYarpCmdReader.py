@@ -25,11 +25,11 @@ import time
 
 #-------------------------------------------------------------------------------
 # Here two classes are defined:
-#  - MotorBrakeYarpCmdReader: it is a thread started from the main procces
-#    that create the DataProcessor object and manage the stop event
+#  - MotorBrakeYarpCmdReader: it is a thread started by the main process
+#    that creates the DataProcessor object and manages the stop event
 #  - DataProcessor: it has the goal of listening to the port /motorbrake/cmd:i
-#    and proccess any received command: if the command has been parsed succesfully 
-#    it forwards the command to the motor-brake's driver. 
+#    and processes any received command: if the command has been parsed successfully 
+#    it forwards the command to the motor-brake's driver else the command is ignored.
 #-------------------------------------------------------------------------------
 
 class DataProcessor(yarp.PortReader):
