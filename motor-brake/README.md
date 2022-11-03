@@ -25,6 +25,13 @@ Alternatively, you can use the docker images available [here](https://hub.docker
 
 You need to just type `python3 motorBrakeManager.py` .
 
+**NOTE**: if you notice this error string: 
+```
+swig/python detected a memory leak of type 'yarp::os::Type *', no destructor found 
+``` 
+
+don't take care of it because it is a well know problem related to yarp and it doesn't affect the behavior of the Motor Brake Manager.
+
 ### Start options
 If you run the Motor Brake Manager with `--help` option you get all available options, that are reported here:
 
