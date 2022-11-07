@@ -10,6 +10,8 @@
 import serial
 import datetime
 import re
+import time
+import numpy as np
 
 from datetime import datetime
 from termcolor import colored
@@ -69,6 +71,8 @@ class MotorBrake:
         self.serialPort.bytesize = 8
         self.serialPort.timeout = 1
         self.serialPort.stopbits = serial.STOPBITS_ONE
+        self.time_array = np.array([])
+
         #self.initted=False
     def openSerialPort(self):
         # Set up serial port for read
@@ -85,6 +89,7 @@ class MotorBrake:
     def getData(self):
         cmd_menu="OD"
         TX_messages = [cmd_menu+dsp6001_end]
+        start_time = time.time()
         for msg in TX_messages:
             self.serialPort.write( msg.encode() )
         data = self.serialPort.readline().decode()
@@ -96,6 +101,18 @@ class MotorBrake:
             self.mydata.rotation = data[12]
             self.mydata.time = date
             self.mydata.progNum +=1
+        curr_time = time.time() -start_time
+        self.time_array = np.append (self.time_array, curr_time)
+        if(self.time_array.size >= 10):
+            print("----- STATISTIC -------")
+            print("media=", np.mean(self.time_array))
+            print("std=", np.std(self.time_array))
+            print("var=", np.var(self.time_array))
+            print("min=", np.min(self.time_array))
+            print("max=", np.max(self.time_array))
+            print("-------------------------")
+            self.time_array.resize(0)
+
 
         return self.mydata # check return value or reference
     
