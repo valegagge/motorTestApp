@@ -72,8 +72,10 @@ class MotorBrake:
         self.serialPort.timeout = 1
         self.serialPort.stopbits = serial.STOPBITS_ONE
         self.time_array = np.array([])
+        self.acqTimingIsEna = False
+        self.acqTimingPeriod = 1
+        self.acqTimingStart = 0
 
-        #self.initted=False
     def openSerialPort(self):
         # Set up serial port for read
          
@@ -101,18 +103,28 @@ class MotorBrake:
             self.mydata.rotation = data[12]
             self.mydata.time = date
             self.mydata.progNum +=1
-        curr_time = time.time() -start_time
-        self.time_array = np.append (self.time_array, curr_time)
-        if(self.time_array.size >= 10):
-            print("----- STATISTIC -------")
-            print("media=", np.mean(self.time_array))
-            print("std=", np.std(self.time_array))
-            print("var=", np.var(self.time_array))
-            print("min=", np.min(self.time_array))
-            print("max=", np.max(self.time_array))
-            print("-------------------------")
-            self.time_array.resize(0)
-
+        curr_time = time.time() 
+        
+        if self.acqTimingIsEna == True:
+            self.time_array = np.append (self.time_array, curr_time-start_time)
+            
+            if(curr_time - self.acqTimingStart > self.acqTimingPeriod):
+                print("\n")
+                print(colored('----- STATISTIC -------', 'blue'))
+                mystr = "mean = " + str(np.mean(self.time_array))
+                print(colored(mystr, 'blue') )
+                mystr = "std = " + str(np.std(self.time_array))
+                print(colored(mystr, 'blue') )
+                mystr = "var = " + str(np.var(self.time_array))
+                print(colored(mystr, 'blue') )
+                mystr = "min = " + str(np.min(self.time_array))
+                print(colored(mystr, 'blue') )
+                mystr = "max = " + str(np.max(self.time_array))
+                print(colored(mystr, 'blue') )
+                print(colored('-----------------------', 'blue'))
+                
+                self.time_array.resize(0)
+                self.acqTimingStart = curr_time
 
         return self.mydata # check return value or reference
     
@@ -130,6 +142,15 @@ class MotorBrake:
     def sendSpeedSetpoint(self, trq):
         setpoint = "N"+str(trq)
         self.__sendData(setpoint)
+    
+    def disableAcquisitionTiming(self):
+        self.acqTimingIsEna = False
+
+    def enableAcquisitionTiming(self, period):
+        self.acqTimingIsEna = True
+        self.acqTimingPeriod = period
+        self.time_array.resize(0)
+        self.acqTimingStart = time.time()
 
     def __sendData(self, cmd): #private method
         if self.serialPort.is_open:

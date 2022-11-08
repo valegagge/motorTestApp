@@ -47,7 +47,8 @@ MENU_CODE_stop_acq=3
 MENU_CODE_set_trq=4
 MENU_CODE_set_sp=5
 MENU_CODE_custom=6
-MENU_CODE_quit=7
+MENU_CODE_ena_disa_acqtiming=7
+MENU_CODE_quit=8
 
 user_menu = {
     MENU_CODE_get_id: {"code":MENU_CODE_get_id, "usrStr":"Get motor-brake device Id and revision"},
@@ -56,6 +57,7 @@ user_menu = {
     MENU_CODE_set_trq: {"code":MENU_CODE_set_trq, "usrStr":"Send torque setpoint"},
     MENU_CODE_set_sp: {"code":MENU_CODE_set_sp, "usrStr":"Send speed setpoint"},
     MENU_CODE_custom: {"code":MENU_CODE_custom, "usrStr":"Custom"},
+    MENU_CODE_ena_disa_acqtiming: {"code":MENU_CODE_ena_disa_acqtiming, "usrStr":"Enable/disable acquisition timing"},
     MENU_CODE_quit: {"code":MENU_CODE_quit, "usrStr":"Quit"},
 }
 
@@ -213,6 +215,15 @@ def inputFloatValue():
         except ValueError:
             print('Please only float values')
             return 0
+
+def inputIntValue():
+    while True: #loop until the user enters a valid int
+        try:
+            val = int(input())
+            return val
+        except ValueError:
+            print('Please only integer values')
+            return -1
 # -------------------------------------------------------------------------
 # parseInputArgument
 # -------------------------------------------------------------------------
@@ -279,7 +290,7 @@ def main():
     while True:
         
         cmd_menu = input_command()
-
+        
         if cmd_menu == MENU_CODE_start_acq:
             print(colored('insert log file name:  ', 'green'), end='\b')
             logFileName = input()
@@ -304,7 +315,7 @@ def main():
             message_send = input()
             with lock:
                 motor_br_dev.sendCommand(message_send)
-        elif MENU_CODE_quit:
+        elif cmd_menu == MENU_CODE_quit:
             print ("Recived quit command")
             if dataCollectorTh.is_alive() or yCmdReaderTh.is_alive():
                 stopThreadsEvt.set()
@@ -319,6 +330,17 @@ def main():
             print("closing yarp network")
             yarp.Network.fini()
             break;
+        elif cmd_menu == MENU_CODE_ena_disa_acqtiming:
+            print(colored('Type 0 to disable or 1 to enable:  ', 'green'), end='\b')
+            cmd = inputIntValue()
+            if cmd == 0:
+                motor_br_dev.disableAcquisitionTiming()
+            elif cmd == 1:
+                print(colored('Type the period in seconds:  ', 'green'), end='\b')
+                period = inputFloatValue()
+                motor_br_dev.enableAcquisitionTiming(period)
+            else:
+                print('Admited values: 0 (diable) and 1 (enable)')
     
 
 
