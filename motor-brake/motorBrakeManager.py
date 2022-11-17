@@ -107,7 +107,9 @@ class MotorBrakeDataCollectorThread (Thread):
                 self.yarpOutPort.write()
             thExeDuration = time.time() - start_time
             #print("MotorBrakeDataCollectorThread: exetime=", thExeDuration, "sleep for", self.period-thExeDuration)
-            time.sleep(self.period-thExeDuration) #go to sleep for remaing time
+            sleep_time = self.period-thExeDuration
+            if sleep_time>0:
+                time.sleep(self.period-thExeDuration) #go to sleep for remaing time
 
             #ATTENTION:
             #note about sleep function
@@ -279,7 +281,7 @@ def main():
     if chosen_com_port == 0:
         return
 
-    motor_br_dev = MotBrDriver(chosen_com_port, 9600)
+    motor_br_dev = MotBrDriver(chosen_com_port, 19200)
 
     motor_br_dev.openSerialPort()
 
