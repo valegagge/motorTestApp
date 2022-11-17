@@ -48,13 +48,13 @@ class MotorBrakeCfg:
 
 class MotorBrakeOuputData:
     def __init__(self) -> None:
-        self.torque=0.0
-        self.speed=0.0
+        self.torque=0.0 #Nm
+        self.speed=0.0  #deg/sec
         self.rotation="-"
         self.time = "::"
         self.progNum=0
     def printData(self):
-        print(self.time, " torque=", self.torque, " speed= ", self.speed, "rotation=", self.rotation)
+        print(self.time, " torque[Nm]=", self.torque, " speed[deg/sec]= ", self.speed, "rotation=", self.rotation)
 
 
 
@@ -98,8 +98,8 @@ class MotorBrake:
         if re.search("^S.+T.+R.+",data):
             data_split_str = re.split("[S,T,R,L]", ''.join(data))
             date = datetime.now().strftime("%H:%M:%S.%f")[:-3]
-            self.mydata.speed = float(data_split_str[1])
-            self.mydata.torque = float(data_split_str[2])
+            self.mydata.speed = (float(data_split_str[1])*60/360) #60/360 to transform from deg/sec to rpm
+            self.mydata.torque = (float(data_split_str[2]))/1000) #/1000 to transform from mNm to Nm
             self.mydata.rotation = data[12]
             self.mydata.time = date
             self.mydata.progNum +=1

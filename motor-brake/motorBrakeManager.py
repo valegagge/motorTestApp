@@ -54,8 +54,8 @@ user_menu = {
     MENU_CODE_get_id: {"code":MENU_CODE_get_id, "usrStr":"Get motor-brake device Id and revision"},
     MENU_CODE_start_acq: {"code":MENU_CODE_start_acq, "usrStr":"Start data acquisition"},
     MENU_CODE_stop_acq: {"code":MENU_CODE_stop_acq, "usrStr":"Stop data acquisition"},
-    MENU_CODE_set_trq: {"code":MENU_CODE_set_trq, "usrStr":"Send torque setpoint"},
-    MENU_CODE_set_sp: {"code":MENU_CODE_set_sp, "usrStr":"Send speed setpoint"},
+    MENU_CODE_set_trq: {"code":MENU_CODE_set_trq, "usrStr":"Send torque setpoint [Nm]"},
+    MENU_CODE_set_sp: {"code":MENU_CODE_set_sp, "usrStr":"Send speed setpoint [deg/sec]"},
     MENU_CODE_custom: {"code":MENU_CODE_custom, "usrStr":"Custom"},
     MENU_CODE_ena_disa_acqtiming: {"code":MENU_CODE_ena_disa_acqtiming, "usrStr":"Enable/disable acquisition timing"},
     MENU_CODE_quit: {"code":MENU_CODE_quit, "usrStr":"Quit"},
@@ -81,7 +81,7 @@ class MotorBrakeDataCollectorThread (Thread):
         print ("MotorBrakeDataCollector is starting ")
         if self.filelog:
             with open(self.filelog, 'w') as f:
-                f.write("#\tTime\tSpeed\tTorque\tRotation\n")
+                f.write("#\tTime\tSpeed[deg/sec]\tTorque[Nm]\tRotation[R or L]\n")
         
         while True:
             if self.stopEvt.is_set():
@@ -258,6 +258,10 @@ def main():
     print('-------------------------------------------------')
     print(colored('         Motor Brake Manager          ', 'white', 'on_green'))
     print('-------------------------------------------------')
+    
+
+    print(colored('ATTENTION: please check that the device          Motor Brake Manager          ', 'white', 'on_green'))
+
     args = parseInputArgument(sys.argv)
 
     if args.yarpServiceOn:
