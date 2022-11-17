@@ -260,7 +260,7 @@ def main():
     print('-------------------------------------------------')
     
 
-    print(colored('ATTENTION: please check that the metric units on the device!!', 'black', 'on_red'))
+    print(colored('ATTENTION: please check that the metric units on the device!!', 'white', 'on_red'))
 
     args = parseInputArgument(sys.argv)
 
