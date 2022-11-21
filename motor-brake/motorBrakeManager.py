@@ -19,6 +19,7 @@ from colorama import init
 import sys
 import argparse
 import time
+import signal
 from motorBrakeYarpCmdReader import MotorBrakeYarpCmdReader as yCmdReader
 
 # -------------------------------------------------------------------------
@@ -123,6 +124,75 @@ class MotorBrakeDataCollectorThread (Thread):
         self.filelog = fileName
 
 
+class MotorBrakeManager:
+    #def __init__(self, motor_br_dev, stopEvt, lock, period, logFileName, yarpSrvEnable):
+
+    #returns 0 if all is ok
+    #returns 1 if serial opening fails
+    #returns 2 if yarp init fails
+    def init(self, serialport, yarpServiceOn, period, file):
+        self.yarpServiceOn = yarpServiceOn
+        #1. open the serial port and init the driver
+        self.motor_br_dev = MotBrDriver(serialport, 19200)
+        ret = self.motor_br_dev.openSerialPort()
+        if ret == False:
+            return 1
+        print ("Serial Port opened successfully")
+        #2. start yarp network init
+        if yarpServiceOn == True:
+            yarp.Network.init()
+            if not yarp.Network.checkNetwork():
+                print("yarpserver is not running")
+                return 2
+            print ("yarp network init successfully")
+        else:
+            print ("yarp network is not available ")
+        #3. Start the Data Collerctor and the Yarp Command Reader
+        self.stopThreadsEvt = Event()
+        self.lock = Lock()
+        self.dataCollectorTh = MotorBrakeDataCollectorThread(self.motor_br_dev, self.stopThreadsEvt, self.lock, period, file, yarpServiceOn)
+        self.yCmdReaderTh = yCmdReader(self.motor_br_dev, self.stopThreadsEvt, self.lock)
+        if yarpServiceOn == True:
+            self.yCmdReaderTh.start()  
+        
+        return 0
+
+    def startAcquisition(self, filename):
+        self.dataCollectorTh.setLogFileName(filename)
+        self.dataCollectorTh.start()
+
+    def stopAcquisition(self):
+        if self.dataCollectorTh.is_alive():
+            self.stopThreadsEvt.set()
+            self.dataCollectorTh.join()
+
+    def sendTorqueSetpoint(self, torque):
+        with self.lock:
+            self.motor_br_dev.sendTorqueSetpoint(torque)
+
+    def sendSpeedSetpoint(self, speed):
+        with self.lock:
+            self.motor_br_dev.sendSpeedSetpoint(speed)
+
+    def sendCustomCommand(self, command):
+        with self.lock:
+            self.motor_br_dev.sendCommand(command)
+
+    def deinit(self):
+        if self.dataCollectorTh.is_alive() or self.yCmdReaderTh.is_alive():
+            self.stopThreadsEvt.set()
+        if self.dataCollectorTh.is_alive():
+            print("Waiting for data collector...")
+            self.dataCollectorTh.join()
+        if self.yCmdReaderTh.is_alive():
+            print("Waiting for yCmdReader...")
+            self.yCmdReaderTh.join()
+        print("closing serial port")
+        self.motor_br_dev.closeSerialPort()
+        if self.yarpServiceOn:
+            print("closing yarp network")
+            yarp.Network.fini()
+        print("All services are closed")        
 
 # -------------------------------------------------------------------------
 # Plot data
@@ -254,8 +324,18 @@ def parseInputArgument(argv):
 # -------------------------------------------------------------------------
 # main
 # -------------------------------------------------------------------------
+brkManager = MotorBrakeManager();
+
+
+def sigIntHandler(signum, frame) -> int:
+    print ("Recived ctrl +c")
+    brkManager.deinit()
+    exit(1)
+    
 def main():
+    
     init()
+    cmd_menu = MENU_CODE_NOT_VALID
 
     print('-------------------------------------------------')
     print(colored('         Motor Brake Manager          ', 'white', 'on_green'))
@@ -266,105 +346,73 @@ def main():
 
     args = parseInputArgument(sys.argv)
 
-    #1. if yarp hasb been enabled, the network will be created
-    if args.yarpServiceOn:
-        yarp.Network.init()
-
-        if not yarp.Network.checkNetwork():
-            print("yarpserver is not running")
-            quit()
-    
-
-
-    cmd_menu = MENU_CODE_NOT_VALID
-
-
-    #2. try to open the port given by argument
-    chosen_com_port = args.serialPort
-    print ("args.serialPort = ", args.serialPort)
-    motor_br_dev = MotBrDriver(chosen_com_port, 19200)
-    ret = motor_br_dev.openSerialPort()
-    #if it fails and not is running ad deamon a prompt menu is proposed to the user
-    if ret == False:
+    ret = brkManager.init(args.serialPort, args.yarpServiceOn, args.period, args.file)
+    #if ret == 0 all is ok
+    if ret == 1:
         print(colored('ERROR: fail open the serial port!!', 'white', 'on_red'))
+        #if it fails and not is running ad deamon a prompt menu is proposed to the user
         if args.daemon == False:
             chosen_com_port = scanComPort()
             if chosen_com_port == 0:
                 print(colored('ERROR: I cannot open the serial port...exiting', 'white', 'on_red')) 
                 return
-            motor_br_dev = MotBrDriver(chosen_com_port, 19200)
-            motor_br_dev.openSerialPort()
+            brkManager.init(args.serialPort, args.yarpServiceOn, args.period, args.file)
         else:
             return
+    elif ret == 2:
+        print(colored('ERROR: fail init yarp network!!', 'white', 'on_red'))
+        return
 
+    # set the handler of ctrl+c signal 
+    signal.signal(signal.SIGINT, sigIntHandler)
 
-    print ("Serial Port opened successfully")
-
-    stopThreadsEvt = Event()
-    lock = Lock()
-    dataCollectorTh = MotorBrakeDataCollectorThread(motor_br_dev, stopThreadsEvt, lock, args.period, args.file, args.yarpServiceOn)
-    yCmdReaderTh = yCmdReader(motor_br_dev, stopThreadsEvt, lock)
-    if args.yarpServiceOn == True:
-        yCmdReaderTh.start()
-
-    #tips: use match/case instead of if/elif
-    while True:
-        
-        cmd_menu = input_command()
-        
-        if cmd_menu == MENU_CODE_start_acq:
-            print(colored('insert log file name:  ', 'green'), end='\b')
-            logFileName = input()
-            dataCollectorTh.setLogFileName(logFileName)
-            dataCollectorTh.start()
-        elif cmd_menu == MENU_CODE_stop_acq:
-            if dataCollectorTh.is_alive():
-                stopThreadsEvt.set()
-                dataCollectorTh.join()
-        elif cmd_menu == MENU_CODE_set_trq:
-            print(colored('Type the torque value to send:  ', 'green'), end='\b')
-            torque = inputFloatValue()
-            with lock:
-                motor_br_dev.sendTorqueSetpoint(torque)
-        elif cmd_menu == MENU_CODE_set_sp:
-            print(colored('Type the speed value to send:  ', 'green'), end='\b')
-            speed = inputFloatValue()
-            with lock:
-                motor_br_dev.sendSpeedSetpoint(speed)
-        elif cmd_menu == MENU_CODE_custom:
-            print(colored('Type the command to send:  ', 'green'), end='\b')
-            message_send = input()
-            with lock:
-                motor_br_dev.sendCommand(message_send)
-        elif cmd_menu == MENU_CODE_quit:
-            print ("Recived quit command")
-            if dataCollectorTh.is_alive() or yCmdReaderTh.is_alive():
-                stopThreadsEvt.set()
-            if dataCollectorTh.is_alive():
-                print("Waiting for data collector...")
-                dataCollectorTh.join()
-            if yCmdReaderTh.is_alive():
-                print("Waiting for yCmdReader...")
-                yCmdReaderTh.join()
-            print("closing serial port")
-            motor_br_dev.closeSerialPort()
-            print("closing yarp network")
-            yarp.Network.fini()
-            break;
-        elif cmd_menu == MENU_CODE_ena_disa_acqtiming:
-            print(colored('Type 0 to disable or 1 to enable:  ', 'green'), end='\b')
-            cmd = inputIntValue()
-            if cmd == 0:
-                motor_br_dev.disableAcquisitionTiming()
-            elif cmd == 1:
-                print(colored('Type the period in seconds:  ', 'green'), end='\b')
-                period = inputFloatValue()
-                motor_br_dev.enableAcquisitionTiming(period)
-            else:
-                print('Admited values: 0 (diable) and 1 (enable)')
+    if args.daemon == False:
+        #tips: use match/case instead of if/elif
+        while True:
+            
+            cmd_menu = input_command()
+            
+            if cmd_menu == MENU_CODE_start_acq:
+                print(colored('insert log file name:  ', 'green'), end='\b')
+                logFileName = input()
+                brkManager.startAcquisition(logFileName)
+            elif cmd_menu == MENU_CODE_stop_acq:
+                brkManager.stopAcquisition(l)
+            elif cmd_menu == MENU_CODE_set_trq:
+                print(colored('Type the torque value to send:  ', 'green'), end='\b')
+                torque = inputFloatValue()
+                brkManager.sendTorqueSetpoint(torque)
+            elif cmd_menu == MENU_CODE_set_sp:
+                print(colored('Type the speed value to send:  ', 'green'), end='\b')
+                speed = inputFloatValue()
+                brkManager.sendSpeedSetpoint(speed)
+            elif cmd_menu == MENU_CODE_custom:
+                print(colored('Type the command to send:  ', 'green'), end='\b')
+                message_send = input()
+                brkManager.sendCustomCommand(message_send)
+            elif cmd_menu == MENU_CODE_quit:
+                print ("Recived quit command")
+                brkManager.deinit()
+                print ("deinit finito")
+                return;
+            elif cmd_menu == MENU_CODE_ena_disa_acqtiming:
+                print(colored('Type 0 to disable or 1 to enable:  ', 'green'), end='\b')
+                cmd = inputIntValue()
+                if cmd == 0:
+                    brkManager.motor_br_dev.disableAcquisitionTiming()
+                elif cmd == 1:
+                    print(colored('Type the period in seconds:  ', 'green'), end='\b')
+                    period = inputFloatValue()
+                    brkManager.motor_br_dev.enableAcquisitionTiming(period)
+                else:
+                    print('Admited values: 0 (diable) and 1 (enable)')
+    else: # running as daemon
+        brkManager.startAcquisition(args.file)
+        while(True):
+            time.sleep(0.1)
     
-
-
+    print ("sto per uscire")
+    return
 
 if __name__ == "__main__":
     main()
