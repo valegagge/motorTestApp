@@ -130,10 +130,10 @@ class MotorBrakeManager:
     #returns 0 if all is ok
     #returns 1 if serial opening fails
     #returns 2 if yarp init fails
-    def init(self, serialport, yarpServiceOn, period, file):
+    def init(self, serialport, baudrate, yarpServiceOn, period, file):
         self.yarpServiceOn = yarpServiceOn
         #1. open the serial port and init the driver
-        self.motor_br_dev = MotBrDriver(serialport, 19200)
+        self.motor_br_dev = MotBrDriver(serialport, baudrate)
         ret = self.motor_br_dev.openSerialPort()
         if ret == False:
             return 1
@@ -311,6 +311,7 @@ def parseInputArgument(argv):
     parser.add_argument("-f", "--file", default="", help="name of file where log data")
     parser.add_argument("-p", "--period", default=0.015, type=float,help="acquisition data period(seconds)")
     parser.add_argument("-s", "--serialPort", default='/dev/ttyUSB0', help="Serial port")
+    parser.add_argument("-b", "--baudrate", default=19200, type=int, help="Serial port baud rate")
     args = parser.parse_args()
     config = vars(args)
     print(config)
@@ -346,7 +347,8 @@ def main():
 
     args = parseInputArgument(sys.argv)
 
-    ret = brkManager.init(args.serialPort, args.yarpServiceOn, args.period, args.file)
+    print ("args.baudrate=", args.baudrate)
+    ret = brkManager.init(args.serialPort, args.baudrate,args.yarpServiceOn, args.period, args.file)
     #if ret == 0 all is ok
     if ret == 1:
         print(colored('ERROR: fail open the serial port!!', 'white', 'on_red'))
