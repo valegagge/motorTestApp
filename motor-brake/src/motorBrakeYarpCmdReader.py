@@ -15,7 +15,7 @@ import yarp
 from threading import Thread
 from threading import Event
 from threading import Lock
-from motorBrakeDriver import MotorBrake as MotBrDriver
+from src.motorBrakeDriver import MotorBrake as MotBrDriver
 import matplotlib.pyplot as plt
 from termcolor import colored
 from colorama import init
