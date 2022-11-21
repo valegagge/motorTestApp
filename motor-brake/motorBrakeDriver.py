@@ -78,12 +78,14 @@ class MotorBrake:
 
     def openSerialPort(self):
         # Set up serial port for read
-         
-        if not self.serialPort.is_open:
-            self.serialPort.open()
-            # = serial.Serial(self.cfg.comport, self.cfg.baudrate, bytesize=8, timeout=1, stopbits=serial.STOPBITS_ONE)
-            #print('-------------------------------------------------');
-            #print('Starting Serial Port', com_port)
+        try: 
+            if not self.serialPort.is_open:
+                self.serialPort.open()
+            return True
+        except serial.serialutil.SerialException:
+            return False
+
+
     def getDataFake(self):
         self.mydata.torque += 1
         self.mydata.speed +=1

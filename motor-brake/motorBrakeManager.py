@@ -237,7 +237,7 @@ def parseInputArgument(argv):
     parser = argparse.ArgumentParser(description="Motor brake manager bla bla",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-y", "--yarpServiceOn", action="store_true", help="enable yarp service")
-    #parser.add_argument("-u", "--noPrompt", action="store_true", help="starting without menu for user interaction")
+    parser.add_argument("-d", "--daemon", action="store_true", help="starting as daemon, without menu for user interaction")
     parser.add_argument("-f", "--file", default="", help="name of file where log data")
     parser.add_argument("-p", "--period", default=0.1, type=float,help="acquisition data period(seconds)")
     parser.add_argument("-s", "--serialPort", default='/dev/ttyUSB0', help="Serial port")
@@ -262,10 +262,11 @@ def main():
     print('-------------------------------------------------')
     
 
-    print(colored('ATTENTION: please check that the metric units on the device!!', 'white', 'on_red'))
+    print(colored('ATTENTION: please check that the metric units on the device!!', 'white', 'on_cyan'))
 
     args = parseInputArgument(sys.argv)
 
+    #1. if yarp hasb been enabled, the network will be created
     if args.yarpServiceOn:
         yarp.Network.init()
 
@@ -276,14 +277,28 @@ def main():
 
 
     cmd_menu = MENU_CODE_NOT_VALID
-   
-    chosen_com_port = scanComPort()
-    if chosen_com_port == 0:
-        return
 
+
+    #2. try to open the port given by argument
+    chosen_com_port = args.serialPort
+    print ("args.serialPort = ", args.serialPort)
     motor_br_dev = MotBrDriver(chosen_com_port, 19200)
+    ret = motor_br_dev.openSerialPort()
+    #if it fails and not is running ad deamon a prompt menu is proposed to the user
+    if ret == False:
+        print(colored('ERROR: fail open the serial port!!', 'white', 'on_red'))
+        if args.daemon == False:
+            chosen_com_port = scanComPort()
+            if chosen_com_port == 0:
+                print(colored('ERROR: I cannot open the serial port...exiting', 'white', 'on_red')) 
+                return
+            motor_br_dev = MotBrDriver(chosen_com_port, 19200)
+            motor_br_dev.openSerialPort()
+        else:
+            return
 
-    motor_br_dev.openSerialPort()
+
+    print ("Serial Port opened successfully")
 
     stopThreadsEvt = Event()
     lock = Lock()
