@@ -1,6 +1,6 @@
 # -------------------------------------------------------------------------
 # Copyright (C) 2022 iCub Tech - Istituto Italiano di Tecnologia
-# This module is the driver for interacting with motor brake DSP6001 device.
+# This module is the driver for interacting with motor brake Magtrol DSP6001 device.
 #
 # Valentina Gaggero
 # <valentina.gaggero@iit.it>
@@ -78,12 +78,14 @@ class MotorBrake:
 
     def openSerialPort(self):
         # Set up serial port for read
-         
-        if not self.serialPort.is_open:
-            self.serialPort.open()
-            # = serial.Serial(self.cfg.comport, self.cfg.baudrate, bytesize=8, timeout=1, stopbits=serial.STOPBITS_ONE)
-            #print('-------------------------------------------------');
-            #print('Starting Serial Port', com_port)
+        try: 
+            if not self.serialPort.is_open:
+                self.serialPort.open()
+            return True
+        except serial.serialutil.SerialException:
+            return False
+
+
     def getDataFake(self):
         self.mydata.torque += 1
         self.mydata.speed +=1
@@ -95,14 +97,14 @@ class MotorBrake:
         for msg in TX_messages:
             self.serialPort.write( msg.encode() )
         data = self.serialPort.readline().decode()
+        self.mydata.time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        self.mydata.progNum +=1
         if re.search("^S.+T.+R.+",data):
             data_split_str = re.split("[S,T,R,L]", ''.join(data))
-            date = datetime.now().strftime("%H:%M:%S.%f")[:-3]
             self.mydata.speed = (float(data_split_str[1])*60/360) #60/360 to transform from deg/sec to rpm
             self.mydata.torque = (float(data_split_str[2])/1000) #/1000 to transform from mNm to Nm
             self.mydata.rotation = data[12]
-            self.mydata.time = date
-            self.mydata.progNum +=1
+            
         curr_time = time.time() 
         
         if self.acqTimingIsEna == True:
