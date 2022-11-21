@@ -1,6 +1,8 @@
 # -------------------------------------------------------------------------
 # Copyright (C) 2022 iCub Tech - Istituto Italiano di Tecnologia
-# Python script for acquiring data from DSP6001 Dynamometer Controller
+# Python script for interacting with a motor brake. 
+# Currently we are using the Magtrol DSP6001 and its driver is in 
+# src.motorBrakeDriver module
 #
 # Written by A. Mura and V. Gaggero
 # <andrea.mura@iit.it> <valentina.gaggero@iit.it>
