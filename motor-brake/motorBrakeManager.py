@@ -110,7 +110,7 @@ class MotorBrakeDataCollectorThread (Thread):
             #print("MotorBrakeDataCollectorThread: exetime=", thExeDuration, "sleep for", self.period-thExeDuration)
             sleep_time = self.period-thExeDuration
             if sleep_time>0:
-                time.sleep(self.period-thExeDuration) #go to sleep for remaing time
+                time.sleep(sleep_time) #go to sleep for remaing time
 
             #ATTENTION:
             #note about sleep function
@@ -309,7 +309,7 @@ def parseInputArgument(argv):
     parser.add_argument("-y", "--yarpServiceOn", action="store_true", help="enable yarp service")
     parser.add_argument("-d", "--daemon", action="store_true", help="starting as daemon, without menu for user interaction")
     parser.add_argument("-f", "--file", default="", help="name of file where log data")
-    parser.add_argument("-p", "--period", default=0.1, type=float,help="acquisition data period(seconds)")
+    parser.add_argument("-p", "--period", default=0.015, type=float,help="acquisition data period(seconds)")
     parser.add_argument("-s", "--serialPort", default='/dev/ttyUSB0', help="Serial port")
     args = parser.parse_args()
     config = vars(args)
