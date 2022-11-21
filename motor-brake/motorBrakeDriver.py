@@ -97,14 +97,14 @@ class MotorBrake:
         for msg in TX_messages:
             self.serialPort.write( msg.encode() )
         data = self.serialPort.readline().decode()
+        self.mydata.time = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        self.mydata.progNum +=1
         if re.search("^S.+T.+R.+",data):
             data_split_str = re.split("[S,T,R,L]", ''.join(data))
-            date = datetime.now().strftime("%H:%M:%S.%f")[:-3]
             self.mydata.speed = (float(data_split_str[1])*60/360) #60/360 to transform from deg/sec to rpm
             self.mydata.torque = (float(data_split_str[2])/1000) #/1000 to transform from mNm to Nm
             self.mydata.rotation = data[12]
-            self.mydata.time = date
-            self.mydata.progNum +=1
+            
         curr_time = time.time() 
         
         if self.acqTimingIsEna == True:
