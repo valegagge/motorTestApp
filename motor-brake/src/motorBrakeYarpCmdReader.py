@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Copyright (C) 2022 iCub Tech - Istituto Italiano di Tecnologia
+# Copyright (C) iCub Tech - Istituto Italiano di Tecnologia (IIT)
 #
 # Here is defined the MotorBrakeYarpCmdReader class and its help classes,
 # that takes care to receive a command from the input yarp port and forwards

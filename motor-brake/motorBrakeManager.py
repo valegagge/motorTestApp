@@ -1,6 +1,7 @@
 # -------------------------------------------------------------------------
-# Copyright (C) 2022 iCub Tech - Istituto Italiano di Tecnologia
-# Python script for interacting with a motor brake. 
+# Copyright (C) iCub Tech - Istituto Italiano di Tecnologia (IIT)
+#
+# Python script for interacting with a motor brake device. 
 # Currently we are using the Magtrol DSP6001 and its driver is in 
 # src.motorBrakeDriver module
 #

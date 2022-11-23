@@ -1,5 +1,6 @@
 # -------------------------------------------------------------------------
-# Copyright (C) 2022 iCub Tech - Istituto Italiano di Tecnologia
+# Copyright (C) iCub Tech - Istituto Italiano di Tecnologia (IIT)
+#
 # This module is the driver for interacting with motor brake Magtrol DSP6001 device.
 #
 # Valentina Gaggero

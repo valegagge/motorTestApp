@@ -1,9 +1,9 @@
 # -------------------------------------------------------------------------
-# Copyright (C) 2022 iCub Tech - Istituto Italiano di Tecnologia
+# Copyright (C) iCub Tech - Istituto Italiano di Tecnologia (IIT)
 #
-# here the class MotorBrakeDataCollectorThread id defined. As its name says, 
-# it is a thread that collect the data from the motor-brake device and
-# it dumps them on file and/or publish them on yarp port "/motorbrake/out"
+# Here the class MotorBrakeDataCollectorThread id defined. As its name says, 
+# it is a thread that collects the data from the motor-brake device and
+# dumps them on file and/or publish them on yarp port "/motorbrake/out"
 # depending by its configuration.
 # The interaction with the hardware device is performed by the driver developed 
 # in MotorBrakeDriver.py for the DSP6001 Dynamometer Controller
